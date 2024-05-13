@@ -12,7 +12,7 @@ export default function Home() {
     document.body.appendChild(script);
 
     script.onload = () => {
-      if (window.GazeCloudAPI) {
+      if (GazeCloudAPI) {
         console.log("GazeCloudAPI loaded successfully");
       } else {
         console.error("GazeCloudAPI is not available.");
@@ -29,8 +29,8 @@ export default function Home() {
   }, []);
 
   const startEyeTracking = () => {
-    if (window.GazeCloudAPI) {
-      window.GazeCloudAPI.StartEyeTracking();
+    if (GazeCloudAPI) {
+      GazeCloudAPI.StartEyeTracking();
       setEyeTrackingStarted(true);
     } else {
       console.error("GazeCloudAPI is not available.");
@@ -38,8 +38,8 @@ export default function Home() {
   };
 
   const stopEyeTracking = () => {
-    if (window.GazeCloudAPI) {
-      window.GazeCloudAPI.StopEyeTracking();
+    if (GazeCloudAPI) {
+      GazeCloudAPI.StopEyeTracking();
       setEyeTrackingStarted(false);
     } else {
       console.error("GazeCloudAPI is not available.");
@@ -48,22 +48,22 @@ export default function Home() {
 
   useEffect(() => {
     if (eyeTrackingStarted) {
-      window.GazeCloudAPI.OnCalibrationComplete = function () {
+      GazeCloudAPI.OnCalibrationComplete = function () {
         console.log("Gaze Calibration Complete");
       };
 
-      window.GazeCloudAPI.OnCamDenied = function () {
+      GazeCloudAPI.OnCamDenied = function () {
         console.log("Camera access denied");
       };
 
-      window.GazeCloudAPI.OnError = function (msg) {
+      GazeCloudAPI.OnError = function (msg) {
         console.log("Error:", msg);
       };
 
       function PlotGaze(GazeData) {
         setGazePosition({ x: GazeData.docX, y: GazeData.docY });
       }
-      window.GazeCloudAPI.OnResult = PlotGaze;
+      GazeCloudAPI.OnResult = PlotGaze;
     }
   }, [eyeTrackingStarted]);
 
