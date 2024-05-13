@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from "react";
 
+
+declare global {
+  interface Window {
+    GazeCloudAPI: any; 
+  }
+}
+
 export default function Home() {
   const [gazePosition, setGazePosition] = useState({ x: 0, y: 0 });
   const [eyeTrackingStarted, setEyeTrackingStarted] = useState(false);
@@ -12,7 +19,7 @@ export default function Home() {
     document.body.appendChild(script);
 
     script.onload = () => {
-      if (GazeCloudAPI) {
+      if (window.GazeCloudAPI) {
         console.log("GazeCloudAPI loaded successfully");
       } else {
         console.error("GazeCloudAPI is not available.");
@@ -29,8 +36,8 @@ export default function Home() {
   }, []);
 
   const startEyeTracking = () => {
-    if (GazeCloudAPI) {
-      GazeCloudAPI.StartEyeTracking();
+    if (window.GazeCloudAPI) {
+      window.GazeCloudAPI.StartEyeTracking();
       setEyeTrackingStarted(true);
     } else {
       console.error("GazeCloudAPI is not available.");
@@ -38,50 +45,48 @@ export default function Home() {
   };
 
   const stopEyeTracking = () => {
-    if (GazeCloudAPI) {
-      GazeCloudAPI.StopEyeTracking();
+    if (window.GazeCloudAPI) {
+      window.GazeCloudAPI.StopEyeTracking();
       setEyeTrackingStarted(false);
     } else {
       console.error("GazeCloudAPI is not available.");
     }
   };
 
+  const plotGaze = (GazeData: any) => {
+    setGazePosition({ x: GazeData.docX, y: GazeData.docY });
+  };
+
   useEffect(() => {
     if (eyeTrackingStarted) {
-      GazeCloudAPI.OnCalibrationComplete = function () {
+      window.GazeCloudAPI.OnCalibrationComplete = () => {
         console.log("Gaze Calibration Complete");
       };
 
-      GazeCloudAPI.OnCamDenied = function () {
+      window.GazeCloudAPI.OnCamDenied = () => {
         console.log("Camera access denied");
       };
 
-      GazeCloudAPI.OnError = function (msg) {
+      window.GazeCloudAPI.OnError = (msg: any) => {
         console.log("Error:", msg);
       };
 
-      function PlotGaze(GazeData) {
-        setGazePosition({ x: GazeData.docX, y: GazeData.docY });
-      }
-      GazeCloudAPI.OnResult = PlotGaze;
+      window.GazeCloudAPI.OnResult = plotGaze;
     }
   }, [eyeTrackingStarted]);
 
   useEffect(() => {
-    // Check if the gaze stays within the button area for more than 1 second
     const checkButtonPress = () => {
       const buttonElement = document.getElementById("pressButton");
-      const buttonRect = buttonElement.getBoundingClientRect();
-      const isGazeInsideButton =
-        gazePosition.x >= buttonRect.left &&
-        gazePosition.x <= buttonRect.right &&
-        gazePosition.y >= buttonRect.top &&
-        gazePosition.y <= buttonRect.bottom;
+      if (buttonElement) {
+        const buttonRect = buttonElement.getBoundingClientRect();
+        const isGazeInsideButton =
+          gazePosition.x >= buttonRect.left &&
+          gazePosition.x <= buttonRect.right &&
+          gazePosition.y >= buttonRect.top &&
+          gazePosition.y <= buttonRect.bottom;
 
-      if (isGazeInsideButton) {
-        setButtonPressed(true);
-      } else {
-        setButtonPressed(false);
+        setButtonPressed(isGazeInsideButton);
       }
     };
 
