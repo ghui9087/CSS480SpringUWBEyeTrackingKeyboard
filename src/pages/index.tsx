@@ -1,10 +1,32 @@
 import React, { useEffect, useState } from "react";
-import { Helmet } from "react-helmet";
 
 export default function Home() {
   const [gazePosition, setGazePosition] = useState({ x: 0, y: 0 });
   const [eyeTrackingStarted, setEyeTrackingStarted] = useState(false);
   const [buttonPressed, setButtonPressed] = useState(false);
+
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://api.gazerecorder.com/GazeCloudAPI.js";
+    script.async = true;
+    document.body.appendChild(script);
+
+    script.onload = () => {
+      if (window.GazeCloudAPI) {
+        console.log("GazeCloudAPI loaded successfully");
+      } else {
+        console.error("GazeCloudAPI is not available.");
+      }
+    };
+
+    script.onerror = () => {
+      console.error("Failed to load GazeCloudAPI script.");
+    };
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   const startEyeTracking = () => {
     if (window.GazeCloudAPI) {
@@ -46,7 +68,6 @@ export default function Home() {
   }, [eyeTrackingStarted]);
 
   useEffect(() => {
-  
     // Check if the gaze stays within the button area for more than 1 second
     const checkButtonPress = () => {
       const buttonElement = document.getElementById("pressButton");
@@ -56,14 +77,14 @@ export default function Home() {
         gazePosition.x <= buttonRect.right &&
         gazePosition.y >= buttonRect.top &&
         gazePosition.y <= buttonRect.bottom;
-  
+
       if (isGazeInsideButton) {
         setButtonPressed(true);
       } else {
         setButtonPressed(false);
       }
     };
-  
+
     checkButtonPress();
 
     return () => {};
@@ -71,9 +92,6 @@ export default function Home() {
 
   return (
     <main>
-      <Helmet>
-        <script src="https://api.gazerecorder.com/GazeCloudAPI.js" />
-      </Helmet>
       <button onClick={startEyeTracking}>Start Eye Tracking</button>{" "}
       <br />
       <button onClick={stopEyeTracking}>Stop Eye Tracking</button>
