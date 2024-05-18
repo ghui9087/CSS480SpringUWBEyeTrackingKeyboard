@@ -1,16 +1,31 @@
 import React, { useEffect, useState } from "react";
-
+import styles from './page.module.css';
 
 declare global {
   interface Window {
-    GazeCloudAPI: any; 
+    GazeCloudAPI: any;
   }
 }
 
-export default function Home() {
+const QWERTY = [
+  ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'Backspace'],
+  ['Caps', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
+  ['Shift', 'z', 'x', 'c', 'v', 'b', 'n', 'm'],
+  ['Space']
+];
+
+const COOLDOWN = 1000;
+
+const Home = () => {
   const [gazePosition, setGazePosition] = useState({ x: 0, y: 0 });
   const [eyeTrackingStarted, setEyeTrackingStarted] = useState(false);
-  const [buttonPressed, setButtonPressed] = useState(false);
+  const [typedText, setTypedText] = useState("");
+  const [canType, setCanType] = useState(false);
+  const [currentHoveredKey, setCurrentHoveredKey] = useState<string | null>(null);
+  const [hoverStartTime, setHoverStartTime] = useState<number | null>(null);
+  const [isShiftActive, setIsShiftActive] = useState(false);
+  const [isCapsActive, setIsCapsActive] = useState(false);
+  const [keyboardLayout, setKeyboardLayout] = useState(QWERTY);
 
   useEffect(() => {
     const script = document.createElement("script");
@@ -19,9 +34,7 @@ export default function Home() {
     document.body.appendChild(script);
 
     script.onload = () => {
-      if (window.GazeCloudAPI) {
-        console.log("GazeCloudAPI loaded successfully");
-      } else {
+      if (!window.GazeCloudAPI) {
         console.error("GazeCloudAPI is not available.");
       }
     };
@@ -35,103 +48,133 @@ export default function Home() {
     };
   }, []);
 
-  const startEyeTracking = () => {
-    if (window.GazeCloudAPI) {
-      window.GazeCloudAPI.StartEyeTracking();
-      setEyeTrackingStarted(true);
-    } else {
-      console.error("GazeCloudAPI is not available.");
-    }
-  };
-
-  const stopEyeTracking = () => {
-    if (window.GazeCloudAPI) {
-      window.GazeCloudAPI.StopEyeTracking();
-      setEyeTrackingStarted(false);
-    } else {
-      console.error("GazeCloudAPI is not available.");
-    }
-  };
-
-  const plotGaze = (GazeData: any) => {
-    setGazePosition({ x: GazeData.docX, y: GazeData.docY });
-  };
-
   useEffect(() => {
     if (eyeTrackingStarted) {
-      window.GazeCloudAPI.OnCalibrationComplete = () => {
-        console.log("Gaze Calibration Complete");
-      };
-
-      window.GazeCloudAPI.OnCamDenied = () => {
-        console.log("Camera access denied");
-      };
-
-      window.GazeCloudAPI.OnError = (msg: any) => {
-        console.log("Error:", msg);
-      };
-
-      window.GazeCloudAPI.OnResult = plotGaze;
+      window.GazeCloudAPI.OnCalibrationComplete = () => setCanType(true);
+      window.GazeCloudAPI.OnCamDenied = () => console.log("Camera access denied");
+      window.GazeCloudAPI.OnError = (msg: any) => console.log("Error:", msg);
+      window.GazeCloudAPI.OnResult = (GazeData: any) => setGazePosition({ x: GazeData.docX, y: GazeData.docY });
     }
   }, [eyeTrackingStarted]);
 
   useEffect(() => {
-    const checkButtonPress = () => {
-      const buttonElement = document.getElementById("pressButton");
-      if (buttonElement) {
-        const buttonRect = buttonElement.getBoundingClientRect();
-        const isGazeInsideButton =
-          gazePosition.x >= buttonRect.left &&
-          gazePosition.x <= buttonRect.right &&
-          gazePosition.y >= buttonRect.top &&
-          gazePosition.y <= buttonRect.bottom;
+    const checkGazeOnKeys = () => {
+      keyboardLayout.flat().forEach(key => {
+        const keyElement = document.getElementById(`key-${key}`);
+        if (keyElement) {
+          const keyRect = keyElement.getBoundingClientRect();
+          const isGazeInsideKey =
+            gazePosition.x >= keyRect.left &&
+            gazePosition.x <= keyRect.right &&
+            gazePosition.y >= keyRect.top &&
+            gazePosition.y <= keyRect.bottom;
 
-        setButtonPressed(isGazeInsideButton);
-      }
+          if (isGazeInsideKey) {
+            if (currentHoveredKey !== key) {
+              setCurrentHoveredKey(key);
+              setHoverStartTime(Date.now());
+            } else if (hoverStartTime && Date.now() - hoverStartTime >= COOLDOWN) {
+              handleKeyPress(key);
+              setHoverStartTime(Date.now());
+              keyElement.style.backgroundColor = "darkgray";
+              setTimeout(() => {
+                keyElement.style.backgroundColor = "lightgray";
+              }, 500);
+            }
+          } else if (currentHoveredKey === key) {
+            setCurrentHoveredKey(null);
+            setHoverStartTime(null);
+          }
+        }
+      });
     };
 
-    checkButtonPress();
+    if (canType) {
+      checkGazeOnKeys();
+    }
+  }, [gazePosition, canType, currentHoveredKey, hoverStartTime]);
 
-    return () => {};
-  }, [gazePosition]);
+  const startEyeTracking = () => {
+    window.GazeCloudAPI?.StartEyeTracking();
+    setEyeTrackingStarted(true);
+  };
+
+  const stopEyeTracking = () => {
+    window.GazeCloudAPI?.StopEyeTracking();
+    setEyeTrackingStarted(false);
+    setCanType(false);
+  };
+
+  const handleKeyPress = (key: string) => {
+    if (key === 'Shift') {
+      toggleShift();
+    } else if (key === 'Backspace') {
+      setTypedText(prev => prev.slice(0, -1));
+    } else if (key === 'Space') {
+      setTypedText(prev => prev + ' ');
+    } else if (key === 'Caps') {
+      toggleCaps();
+    } else {
+      setTypedText(prev => prev + key);
+      if (isShiftActive) toggleShift();
+    }
+  };
+
+  const toggleShift = () => {
+    setIsShiftActive(prev => !prev);
+    setKeyboardLayout(prevLayout =>
+      prevLayout.map(row =>
+        row.map(k => (k !== 'Shift' && k !== 'Backspace' && k !== 'Space' && k !== 'Caps' ? toggleCase(k) : k))
+      )
+    );
+  };
+
+  const toggleCaps = () => {
+    setIsCapsActive(prev => !prev);
+    setKeyboardLayout(prevLayout =>
+      prevLayout.map(row =>
+        row.map(k => (k !== 'Shift' && k !== 'Backspace' && k !== 'Space' && k !== 'Caps' ? toggleCase(k) : k))
+      )
+    );
+  };
+
+  const toggleCase = (char: string) => (char.toLowerCase() === char ? char.toUpperCase() : char.toLowerCase());
 
   return (
-    <main>
-      <button onClick={startEyeTracking}>Start Eye Tracking</button>{" "}
+    <main className={styles.container}>
+      <button className={styles.startTracking} onClick={startEyeTracking}>Start Eye Tracking</button>
       <br />
-      <button onClick={stopEyeTracking}>Stop Eye Tracking</button>
-      <div
-        id="pressButton"
-        style={{
-          position: "absolute",
-          left: "50%",
-          top: "50%",
-          transform: "translate(-50%, -50%)",
-          width: "1000px",
-          height: "500px",
-          backgroundColor: buttonPressed ? "green" : "blue",
-          borderRadius: "10px",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        Button
+      <div className={styles.typedText}>
+        Typed Text: {typedText}
+      </div>
+      <div className={styles.innerContainer}>
+        <div>
+          {keyboardLayout.map((row, rowIndex) => (
+            <div key={rowIndex} style={{ display: "flex", justifyContent: rowIndex === 3 ? 'center' : 'flex-start' }}>
+              {row.map((key, keyIndex) => (
+                <div
+                  key={keyIndex}
+                  id={`key-${key}`}
+                  className={`${styles.keys} ${key === 'Shift' || key === 'Backspace' ? styles.backspaceKey : ''} ${key === 'Space' ? styles.spaceKey : ''}`}
+                >
+                  {key !== 'Space' && key}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
       {eyeTrackingStarted && (
         <div
+          className={styles.gaze}
           style={{
-            position: "absolute",
             left: gazePosition.x,
             top: gazePosition.y,
-            width: "20px",
-            height: "20px",
-            borderRadius: "50%",
-            backgroundColor: "rgba(255, 0, 0, 0.5)",
-            transform: "translate(-50%, -50%)",
           }}
         ></div>
       )}
     </main>
   );
-}
+};
+
+export default Home;
