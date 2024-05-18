@@ -9,8 +9,8 @@ declare global {
 
 const QWERTY = [
   ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'Backspace'],
-  ['Caps', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
-  ['Shift', 'z', 'x', 'c', 'v', 'b', 'n', 'm'],
+  ['Caps', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'Enter'],
+  ['Shift', 'z', 'x', 'c', 'v', 'b', 'n', 'm', 'Shift'],
   ['Space']
 ];
 
@@ -112,6 +112,7 @@ const Home = () => {
       setTypedText(prev => prev.slice(0, -1));
     } else if (key === 'Space') {
       setTypedText(prev => prev + ' ');
+    } else if (key === 'Enter'){
     } else if (key === 'Caps') {
       toggleCaps();
     } else {
@@ -155,7 +156,7 @@ const Home = () => {
                 <div
                   key={keyIndex}
                   id={`key-${key}`}
-                  className={`${styles.keys} ${key === 'Shift' || key === 'Backspace' ? styles.backspaceKey : ''} ${key === 'Space' ? styles.spaceKey : ''}`}
+                  className={`${styles.keys} ${key === 'Shift' || key === 'Enter' || key === 'Backspace' ? styles.backspaceKey : ''} ${key === 'Space' ? styles.spaceKey : ''}`}
                 >
                   {key !== 'Space' && key}
                 </div>
