@@ -10,7 +10,7 @@ declare global {
 const QWERTY = [
   ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'Backspace'],
   ['Caps', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'Enter'],
-  ['Shift', 'z', 'x', 'c', 'v', 'b', 'n', 'm', 'Shift'],
+  ['Shift', 'z', 'x', 'c', 'v', 'b', 'n', 'm'],
   ['Space']
 ];
 
@@ -125,7 +125,7 @@ const Home = () => {
     setIsShiftActive(prev => !prev);
     setKeyboardLayout(prevLayout =>
       prevLayout.map(row =>
-        row.map(k => (k !== 'Shift' && k !== 'Backspace' && k !== 'Space' && k !== 'Caps' ? toggleCase(k) : k))
+        row.map(k => (k !== 'Shift' && k !== 'Backspace' && k !== 'Space' && k !== 'Caps' && k != 'Enter' ? toggleCase(k) : k))
       )
     );
   };
@@ -134,7 +134,7 @@ const Home = () => {
     setIsCapsActive(prev => !prev);
     setKeyboardLayout(prevLayout =>
       prevLayout.map(row =>
-        row.map(k => (k !== 'Shift' && k !== 'Backspace' && k !== 'Space' && k !== 'Caps' ? toggleCase(k) : k))
+        row.map(k => (k !== 'Shift' && k !== 'Backspace' && k !== 'Space' && k !== 'Caps' && k != 'Enter' ? toggleCase(k) : k))
       )
     );
   };
