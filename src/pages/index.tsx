@@ -16,6 +16,10 @@ const QWERTY = [
 
 const COOLDOWN = 1000;
 
+const BlinkingCursor = () => {
+  return <span className={styles.blinkingCursor}></span>;
+};
+
 const Home = () => {
   const [gazePosition, setGazePosition] = useState({ x: 0, y: 0 });
   const [eyeTrackingStarted, setEyeTrackingStarted] = useState(false);
@@ -63,11 +67,12 @@ const Home = () => {
         const keyElement = document.getElementById(`key-${key}`);
         if (keyElement) {
           const keyRect = keyElement.getBoundingClientRect();
+          const gazeRadius = 20;
           const isGazeInsideKey =
-            gazePosition.x >= keyRect.left &&
-            gazePosition.x <= keyRect.right &&
-            gazePosition.y >= keyRect.top &&
-            gazePosition.y <= keyRect.bottom;
+            gazePosition.x + gazeRadius >= keyRect.left &&
+            gazePosition.x - gazeRadius <= keyRect.right &&
+            gazePosition.y + gazeRadius >= keyRect.top &&
+            gazePosition.y - gazeRadius <= keyRect.bottom;
 
           if (isGazeInsideKey) {
             if (currentHoveredKey !== key) {
@@ -112,7 +117,7 @@ const Home = () => {
       setTypedText(prev => prev.slice(0, -1));
     } else if (key === 'Space') {
       setTypedText(prev => prev + ' ');
-    } else if (key === 'Enter'){
+    } else if (key === 'Enter') {
     } else if (key === 'Caps') {
       toggleCaps();
     } else {
@@ -125,7 +130,7 @@ const Home = () => {
     setIsShiftActive(prev => !prev);
     setKeyboardLayout(prevLayout =>
       prevLayout.map(row =>
-        row.map(k => (k !== 'Shift' && k !== 'Backspace' && k !== 'Space' && k !== 'Caps' && k != 'Enter' ? toggleCase(k) : k))
+        row.map(k => (k !== 'Shift' && k !== 'Backspace' && k !== 'Space' && k !== 'Caps' && k !== 'Enter' ? toggleCase(k) : k))
       )
     );
   };
@@ -134,7 +139,7 @@ const Home = () => {
     setIsCapsActive(prev => !prev);
     setKeyboardLayout(prevLayout =>
       prevLayout.map(row =>
-        row.map(k => (k !== 'Shift' && k !== 'Backspace' && k !== 'Space' && k !== 'Caps' && k != 'Enter' ? toggleCase(k) : k))
+        row.map(k => (k !== 'Shift' && k !== 'Backspace' && k !== 'Space' && k !== 'Caps' && k !== 'Enter' ? toggleCase(k) : k))
       )
     );
   };
@@ -146,7 +151,7 @@ const Home = () => {
       <button className={styles.startTracking} onClick={startEyeTracking}>Start Eye Tracking</button>
       <br />
       <div className={styles.typedText}>
-        Typed Text: {typedText}
+        <p>Typed Text:</p>{typedText}<BlinkingCursor />
       </div>
       <div className={styles.innerContainer}>
         <div>

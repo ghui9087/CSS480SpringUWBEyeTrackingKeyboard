@@ -38,8 +38,8 @@
 
 .gaze {
     position: absolute;
-    width: 20px;
-    height: 20px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background-color: rgba(255, 0, 0, 0.5);
     transform: translate(-50%, -50%);
@@ -59,8 +59,28 @@
 }
 
 .typedText {
-    margin-top: 20px;
-    font-size: 24px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    font-size: 1.2em;
+    min-height: 4em;
+    display: flex;
+    align-items: center;
+    font-size: 32px;
+}
+  
+.blinkingCursor {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background-color: black;
+    animation: blink 1s step-start infinite;
+}
+
+
+@keyframes blink {
+    50% {
+        opacity: 0;
+    }
 }
 
 
